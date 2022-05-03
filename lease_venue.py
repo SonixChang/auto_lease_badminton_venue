@@ -20,13 +20,13 @@ def get_captcha():
         return cnv.toDataURL('image/jpeg').substring(22);    
         """, CHROME.find_element_by_xpath('''//*[@id="ChkImg"]'''))
 
-    with open("captcha_login.png", 'wb') as image:
+    with open(PWD + "\captcha_login.png", 'wb') as image:
         image.write(base64.b64decode(img_base64))
     ocr = ddddocr.DdddOcr()
-    with open(PWD + '/captcha_login.png', 'rb') as f:
+    with open(PWD + '\captcha_login.png', 'rb') as f:
         img_bytes = f.read()
     captcha = ocr.classification(img_bytes) # 驗證碼
-    os.remove(PWD + '/captcha_login.png')
+    os.remove(PWD + '\captcha_login.png')
     return captcha
 
 
@@ -151,7 +151,8 @@ def create_lease():
 
 if __name__ == '__main__':
     PWD = os.path.dirname(__file__)
-    with open(PWD + '/input.json', 'r', encoding='utf-8') as f:
+    print(PWD)
+    with open(PWD + '\input.json', 'r', encoding='utf-8') as f:
         InputData = json.load(f)
 
     LOGIN_URL = InputData['login_url']
