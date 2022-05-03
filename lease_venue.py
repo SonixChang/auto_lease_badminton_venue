@@ -93,12 +93,14 @@ def search_all_time_interval_by_specify_date(date_choose: str):
     print(json.dumps(DATEBOX, indent=2))
 
 
-def find_consecutive_and_choose(date_choose: str):
+def find_consecutive_and_choose(date_choose: str, ini_court: int, fin_court: int, specify_ini_time: int):
     DATE = Select(CHROME.find_element_by_id('RentalData'))
     VENUE = {}
     VenueAndTimeYouLease = {}
+    TwoHours = True
 
-    for venu_num in range(727, 737): # 選場地
+    for venu_num in range(ini_court, fin_court + 1): # 建立場地dict
+        venu_num += 726
         venue_id = f"SubVenues_{venu_num}"
         venu_num -= 726
         VENUE[venue_id] = f"Court {venu_num}"
@@ -109,26 +111,52 @@ def find_consecutive_and_choose(date_choose: str):
             DATE.select_by_value(date_item.text)
             time.sleep(1)
 
-            for venu_num in range(727, 737): # 選場地
+            for venu_num in range(ini_court, fin_court + 1): # 選場地
+                venu_num += 726
                 venue_id = f"SubVenues_{venu_num}"
                 CHROME.find_element_by_id(venue_id).click()
                 time.sleep(1.5)
 
                 time_interval = CHROME.find_elements_by_class_name("BookB.UnBooked")
-                for times in time_interval:
-                    if time_interval.index(times) == 0:
+                if TwoHours:
+                    if len(time_interval) < 2:
                         continue
-                    cure_ini_time = times.text[:5]
-                    last_fin_time = time_interval[time_interval.index(times)-1].text[-5:]
-                    if cure_ini_time == last_fin_time:    # 判斷是否連續
-                        if time_interval[time_interval.index(times)-1].text not in VenueAndTimeYouLease:  # 前一'網頁元素'判斷(可以改成'時間區間')
-                            time_interval[time_interval.index(times)-1].click()
+                    for times in time_interval:  # 租2hrs
+                        if int(times.text[:2]) == specify_ini_time: # 指定起始時間
+                            cure_fin_time = times.text[-5:]
+                            next_ini_time = time_interval[time_interval.index(times)+1].text[:5]
+                            if cure_fin_time == next_ini_time:    # 判斷是否連續
+                                if time_interval[time_interval.index(times)+1].text not in VenueAndTimeYouLease:  # 前一'網頁元素'判斷(可以改成'時間區間')
+                                    times.click()
+                                    time_interval[time_interval.index(times)+1].click()
+                                    
+                                    VenueAndTimeYouLease[VENUE[venue_id]] = []
+                                    VenueAndTimeYouLease[VENUE[venue_id]].append(times.text)
+                                    VenueAndTimeYouLease[VENUE[venue_id]].append(time_interval[time_interval.index(times)+1].text)
+                                    print(VenueAndTimeYouLease)
+                                    return                        # 有租到就終止副程式
+            
+            TwoHours = False
+            for venu_num in range(ini_court, fin_court + 1): # 選場地
+                venu_num += 726
+                venue_id = f"SubVenues_{venu_num}"
+                CHROME.find_element_by_id(venue_id).click()
+                time.sleep(1.5)
+
+                time_interval = CHROME.find_elements_by_class_name("BookB.UnBooked")
+                
+                if TwoHours == False:
+                    for times in time_interval:  # 租1hr
+                        if int(times.text[:2]) == specify_ini_time or int(times.text[:2]) == specify_ini_time + 1:
                             times.click()
                             VenueAndTimeYouLease[VENUE[venue_id]] = []
-                            VenueAndTimeYouLease[VENUE[venue_id]].append(time_interval[time_interval.index(times)-1].text)
                             VenueAndTimeYouLease[VENUE[venue_id]].append(times.text)
                             print(VenueAndTimeYouLease)
                             return
+    
+    print("No venue was rented. Please input valid lease_date, Court, and ini_time again.")
+    CHROME.quit()
+    exit()
 
 
 def input_Participate():
@@ -159,7 +187,10 @@ if __name__ == '__main__':
     MAIL = InputData['mail']
     PASSWORD = InputData['password']
     
-    LEASE_DATE = InputData["lease_date"]
+    LEASE_DATE = InputData['lease_date']
+    INI_COURT = InputData['ini_court']
+    FIN_COURT = InputData['fin_court']
+    INI_TIME = InputData['ini_time']
     GENERAL_STATUS = InputData['general_status'] # 一般身分人數
     PREFERENTIAL_STATUS = InputData['preferential_status'] # 優待身分人數
 
@@ -176,7 +207,7 @@ if __name__ == '__main__':
         login()
         time.sleep(1.5)
 
-        find_consecutive_and_choose(LEASE_DATE) # 可以同一時間兩面場地嗎？
+        find_consecutive_and_choose(LEASE_DATE, INI_COURT, FIN_COURT, INI_TIME)
         input_Participate()
         send()
         time.sleep(3)

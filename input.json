@@ -3,6 +3,9 @@
     "mail": "",
     "password": "",
     "lease_date": "",
-    "general_status": ,
-    "preferential_status": 
+    "ini_court": 1,
+    "fin_court": 5,
+    "ini_time": 9,
+    "general_status": 2,
+    "preferential_status": 3
 }
